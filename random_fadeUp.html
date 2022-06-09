@@ -8,7 +8,7 @@
     <!-- <meta property="og:description" content=""> -->
     <!-- <meta property="og:url" content=""> -->
     <!-- <meta property="og:image" content=""> -->
-    <title>4-13 ランダムに現れる（CSS×JS）</title>
+    <title>要素がランダムに現れる</title>
     <link rel="stylesheet" href="reset.css">
     <style>
       [v-cloak] {
@@ -17,6 +17,8 @@
 
       #app {
         padding: 100px;
+        height: 1600px;
+        text-align: center;
       }
 
       /*========= レイアウトのためのCSS ===============*/
@@ -41,30 +43,34 @@
     <div id="app" v-cloak>
       <p>ページに遷移すると、ランダムに現れる</p>
   
-      <!--ぱたっ-->
+      <!--読み込みしてふわっと-->
       <transition-group appear
-        name="staggered-fade"
         tag="ul"
         class="randomBox"
         @before-enter="beforeEnter"
         @enter="enter"
         @leave="leave"
+        :css="false"
       >
-        <li class="box" v-for="(moveData,index) in moveDatas" :key="moveData" :data-index="randomIndex(moveData)">ランダムに表示　ふわっ</li>
+        <li class="box" v-for="(moveData,index) in moveDatas" :key="moveData" :data-index="randoms1[index]">{{ moveData }}</li>
       </transition-group>
 
 
-      <br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓スクロール後にランダムに現れる<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓
+      <br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>スクロール後にランダムに現れる<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓<br>↓
         
 
-      <!--スクロールしてぱたっ-->
-      <ul class="randomScroll">
-          <li class="box">ランダムに表示　ふわっ</li>
-          <li class="box">ランダムに表示　ふわっ</li>
-          <li class="box">ランダムに表示　ふわっ</li>
-          <li class="box">ランダムに表示　ふわっ</li>
-          <li class="box">ランダムに表示　ふわっ</li>
-      </ul>
+      <!--スクロールしてふわっと-->
+      <transition-group
+        tag="ul"
+        class="randomScroll"
+        id="randomScroll"
+        @before-enter="beforeEnter"
+        @enter="enter"
+        @leave="leave"
+        :css="false"
+      >
+        <li class="box" v-for="(scrollData,index) in scrollDatas" :key="scrollData" :data-index="randoms2[index]" v-show="isScroll">{{ scrollData }}</li>
+      </transition-group>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.4/gsap.min.js"></script>
@@ -79,36 +85,56 @@
           'component-a': ComponentA,
         },
         data: {
-            moveDatas: ['1','2','3','4','5'],
-            randoms: []
+            moveDatas: ['a','b','c','d','e'],
+            scrollDatas: ['a','b','c','d','e','f','g'],
+            randoms1: [],
+            randoms2: [],
+            isScroll: false
         },
         created(){
-          /** 最小値と最大値 */
-          let min = 0, max = this.moveDatas.length;
+            this.randomCreat(this.moveDatas,this.randoms1)
+            this.randomCreat(this.scrollDatas,this.randoms2)
+        },
+        mounted(){
+          let that = this
+          window.addEventListener('scroll', function(){that.handleScroll('randomScroll')})
+        },
+        destroyed() {
+          window.removeEventListener('scroll', function(){that.handleScroll('randomScroll')})
+        },
+        methods: {
+          handleScroll(n) {
+            const t = document.getElementById(n)
+            const d = t.offsetTop - window.pageYOffset + 100
+            if (d < window.innerHeight ) {
+              this.isScroll = true
+            } else {
+              this.isScroll = false
+            }
+          },
+
+          randomCreat(n,m){
+            /** 最小値と最大値 */
+            let min = 0, max = n.length;
             
             /** 重複チェックしながら乱数作成 */
             for(i = min; i <= max; i++){
               while(true){
                 var tmp = this.intRandom(min, max);
-                if(!this.randoms.includes(tmp)){
-                  this.randoms.push(tmp);
+                if(!m.includes(tmp)){
+                  m.push(tmp);
                   break;
                 }
               }
             }
-            console.log(this.randoms)
-        },
-        mounted(){
-            
-        },
-        methods: {
-          randomIndex(n) {          
-            return this.randoms[n]
           },
-          intRandom(min, max){
-            /** min以上max以下の整数値の乱数を返す */
+
+          /** min以上max以下の整数値の乱数を返す */
+          intRandom(min, max){         
             return Math.floor( Math.random() * (max - min + 1)) + min;
           },
+
+          ///アニメ挙動//
           beforeEnter(el) {
             el.style.opacity = 0
             el.style.transform = 'translateY(100px)'
